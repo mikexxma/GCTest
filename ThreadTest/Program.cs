@@ -12,6 +12,7 @@ namespace ThreadTest
         public bool done ;// Static fields are shared between all threads
         static object locker = new object();
         static EventWaitHandle are = new AutoResetEvent(false);
+        static CancellationTokenSource cts = new CancellationTokenSource();
         static void Main(string[] args)
         {
             ////Hello world thread
@@ -35,7 +36,7 @@ namespace ThreadTest
             //new Thread(p.print1).Start();
             //p.print1();
 
-            
+
 
             ////线程调用带参数的方法
             //Thread t1 = new Thread(new ParameterizedThreadStart(print));
@@ -47,7 +48,8 @@ namespace ThreadTest
             //Thread t2 = new Thread(delegate() { print(s1, s2); });
             //t2.Name = "two_param_thread";
             //t2.Start();
-           
+
+
 
             ////阻止线程 interupt abort的区别在于 interupt 会释放组织线程的状态然后继续执行到线程结束，abort直接在调用的时候阻止
             //Thread t3 = new Thread(delegate () { try { Thread.Sleep(100000); } catch (Exception e) { Console.WriteLine("Thread 3 has been interupted"); } Console.WriteLine("I am thread 3"); });
@@ -56,23 +58,76 @@ namespace ThreadTest
             //t3.Abort();
 
 
-            //线程同步方法 AutoResetEvent
+            ////线程同步方法 AutoResetEvent
+            //Thread t4 = new Thread(t4fun);
+            //t4.Name = "t4";
+            //Thread t5 = new Thread(t5fun);
+            //t5.Name = "t5";
+            //Thread.Sleep(2000);
+            //t4.Start();
+            //t5.Start();
+            ////主线程完事通知下个线程进来 t4 和 t5去抢
+            //are.Set();
+
+            //Thread t6 = new Thread(t6fun);
+            //t6.Start();
+            //t6.Join();//组赛其他线程 直到t6运行结束
+            //Console.WriteLine("Main Thread start");
+            //Console.ReadLine();
+
+
+            //begin a task
+            //Task task1 = new Task(taskPrint);
+            //task1.ContinueWith<bool>(r=> { return true; }).ContinueWith<string>(r => { Console.WriteLine("task1 still runing"+task1.AsyncState); return "hello";});
+            
+            //Console.WriteLine("task1 "+task1.Status+ task1.AsyncState);
+
+            
+            //Task task2 = Task.Factory.StartNew(taskPrint);
+            //Console.WriteLine("task2 "+task2.Status);
+
+
+            //TaskFactory taskFactory = new TaskFactory();
+            //Task task3 = taskFactory.StartNew(taskPrint);
+            //Console.WriteLine("task3"+ task3.Status);
            
-            Thread t4 = new Thread(t4fun);
-            t4.Name = "t4";
-            Thread t5 = new Thread(t5fun);
-            t5.Name = "t5";
-            Thread.Sleep(2000);
-            t4.Start();
-            t5.Start();
-            //主线程完事通知下个线程进来 t4 和 t5去抢
-            are.Set();
+            //Task.WaitAll(task2, task3);
+            //task1.Start();
+           
+
+            //创建一个可以取消的task
+            
+            Task task4 = new Task(taskPrint,cts.Token);
+            cts.Token.Register(delegate () { Console.WriteLine("hello token"); });
+            task4.Start();
+         
             Console.ReadLine();
+            cts.Cancel();
+            Console.ReadLine();
+
         }
+
+        static void taskPrint()
+        {
+            for (int i = 0; i <= 5; i++)
+            {
+                Thread.Sleep(1000);
+
+                Console.WriteLine("hello world task"+ Task.CurrentId);
+                if (cts.Token.IsCancellationRequested)
+                {
+                    Console.WriteLine(Task.CurrentId + " is dead");
+                    return;
+                }
+            }
+        }
+
+
         static void print()
         {
             for (int i=0; i <= 40; i++)
             {
+                Thread.Sleep(1000);
                 Console.WriteLine("hello world other thread");
             }
         }
@@ -121,6 +176,10 @@ namespace ThreadTest
             Console.WriteLine("Hello delay print " + Thread.CurrentThread.Name);
         }
 
-        
+        static void t6fun()
+        {
+            Thread.Sleep(2000);
+            Console.WriteLine("Thread 6 run");
+        }    
     }
 }
