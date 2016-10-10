@@ -97,12 +97,21 @@ namespace ThreadTest
 
             //创建一个可以取消的task
             
-            Task task4 = new Task(taskPrint,cts.Token);
-            cts.Token.Register(delegate () { Console.WriteLine("hello token"); });
-            task4.Start();
+            //Task task4 = new Task(taskPrint,cts.Token);
+            //cts.Token.Register(delegate () { Console.WriteLine("hello token"); });
+            //task4.Start();
          
-            Console.ReadLine();
-            cts.Cancel();
+            //Console.ReadLine();
+            //cts.Cancel();
+            //Console.ReadLine();
+
+            Console.WriteLine("Main Thread start");
+            Task<int> task = getHelloAsync();
+            int lenght = task.Result;
+
+            Console.WriteLine("hello"+lenght);
+
+            Console.WriteLine("Main Thread End");
             Console.ReadLine();
 
         }
@@ -180,6 +189,22 @@ namespace ThreadTest
         {
             Thread.Sleep(2000);
             Console.WriteLine("Thread 6 run");
+        }
+
+        static async Task<int> getHelloAsync()
+        {
+            Console.WriteLine("async Task lalala");
+            string strhello = await getHello();
+            Console.WriteLine("async Task end end");
+            return strhello.Length;
+        }
+        static Task<String> getHello()
+        {
+            Thread.Sleep(2000);
+            Task<String> hello = new Task<string>(delegate() { return "hello"; });
+            hello.Start();
+            return hello;
         }    
     }
+
 }
